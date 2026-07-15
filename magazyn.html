@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Magazyn Referencji</title>
+
+
+
+<style>
+:root {
+  --paper:      #F2ECDC;
+  --paper-deep: #E5D6BA;
+  --paper-dark: #D4C49E;
+  --ink:        #221E18;
+  --ink-soft:   #6B5F4F;
+  --red:        #AE3A29;
+  --green:      #46563F;
+  --line:       #CBB996;
+  --max-w:      860px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Work Sans', sans-serif;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══ TOP BAR ══ */
+.topbar {
+  position: sticky; top:0; z-index:200;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+.topbar-inner {
+  max-width: var(--max-w); margin:0 auto;
+  display: flex; align-items:center; gap:14px;
+  padding: .8rem 1.25rem;
+}
+.brand {
+  display:flex; align-items:center; gap:.7rem;
+  font-family:'Impact','Arial Black','Anton',sans-serif; font-size:1.25rem; letter-spacing:.06em;
+  text-transform:uppercase; flex-shrink:0;
+}
+.brand-mark {
+  width:30px; height:30px; flex-shrink:0;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 2px, transparent 2px 4px,
+    var(--ink) 4px 6px, transparent 6px 9px
+  );
+}
+
+/* search — takes remaining space */
+.search-wrap { position:relative; flex:1; }
+.search-ico {
+  position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  font-size:14px; pointer-events:none; color:var(--ink-soft);
+}
+.search-inp {
+  width:100%;
+  background:var(--paper-deep);
+  border:2px solid var(--ink); border-radius:4px;
+  padding:9px 36px 9px 38px;
+  color:var(--ink);
+  font-family:'Courier New','Lucida Console',monospace; font-size:13px;
+  outline:none; -webkit-appearance:none;
+  transition:box-shadow .2s;
+}
+.search-inp:focus { box-shadow:3px 3px 0 var(--ink); }
+.search-inp::placeholder { color:var(--ink-soft); }
+.search-clr {
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  background:none; border:none; font-size:15px;
+  color:var(--ink-soft); cursor:pointer; padding:3px;
+  display:none;
+}
+.search-clr:hover { color:var(--red); }
+.search-clr.on { display:block; }
+
+.topbar-count {
+  font-family:'Courier New','Lucida Console',monospace; flex-shrink:0;
+  text-align:right; display:none;
+}
+.topbar-count.show { display:block; }
+.tc-num { font-size:1.1rem; font-weight:700; line-height:1; }
+.tc-lbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); }
+
+/* ══ RESULT BANNER ══ */
+.result-banner {
+  display:none;
+  background:var(--paper-deep);
+  border-bottom:2px solid var(--ink);
+}
+.result-banner.show { display:block; }
+.rb-inner {
+  max-width:var(--max-w); margin:0 auto;
+  padding:.6rem 1.25rem;
+  display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+}
+.rb-text { font-family:'Courier New','Lucida Console',monospace; font-size:.8rem; }
+.rb-badge {
+  font-family:'Impact','Arial Black','Anton',sans-serif; font-size:1rem; letter-spacing:.04em;
+  background:var(--ink); color:var(--paper);
+  padding:2px 10px; border-radius:3px;
+}
+.rb-badge.found { background:var(--green); }
+.rb-badge.notfound { background:var(--red); }
+.rb-arrow { color:var(--ink-soft); font-size:.8rem; }
+.rb-shelf {
+  font-family:'Courier New','Lucida Console',monospace; font-size:.8rem;
+  font-weight:700;
+}
+
+/* ══ CONTENT ══ */
+.content {
+  max-width:var(--max-w); margin:0 auto;
+  padding:1.4rem 1.25rem 3rem;
+}
+
+/* ══ SHELVES ══ */
+.shelves { display:flex; flex-direction:column; }
+
+.shelf-row {
+  position:relative; cursor:pointer;
+  border:2px solid var(--ink);
+  border-top:none;
+  background:var(--paper-deep);
+  transition:background .15s;
+  user-select:none;
+}
+.shelf-row:first-child { border-top:2px solid var(--ink); border-radius:4px 4px 0 0; }
+.shelf-row:last-child  { border-radius:0 0 4px 4px; }
+.shelf-row + .shelf-row { border-top:1px dashed var(--line); }
+
+/* 3-D left ledge */
+.shelf-row::before {
+  content:'';
+  position:absolute; left:-9px; top:-1px; bottom:-1px; width:9px;
+  background:linear-gradient(90deg, var(--paper-dark), var(--paper-deep));
+  border:1px solid var(--ink);
+  border-right:none;
+  border-radius:3px 0 0 3px;
+}
+/* bottom shadow */
+.shelf-row::after {
+  content:'';
+  position:absolute; bottom:-5px; left:-7px; right:-2px; height:5px;
+  background:linear-gradient(180deg,rgba(34,30,24,.16),transparent);
+  pointer-events:none; z-index:1;
+}
+.shelf-row:hover { background:#ddd0ae; }
+.shelf-row.found-row {
+  background:rgba(70,86,63,.1);
+  border-color:var(--green) !important;
+}
+.shelf-row.found-row + .shelf-row { border-top-color:var(--green); }
+
+.shelf-inner {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 15px;
+}
+
+/* pull animation */
+.shelf-row.pulling .shelf-inner {
+  animation:shelfPull .35s cubic-bezier(.22,.85,.36,1);
+}
+@keyframes shelfPull {
+  0%  { transform:translateX(0); }
+  35% { transform:translateX(13px); }
+  100%{ transform:translateX(0); }
+}
+
+.shelf-label {
+  flex-shrink:0;
+  font-family:'Impact','Arial Black','Anton',sans-serif; font-size:1rem; letter-spacing:.05em;
+  background:var(--ink); color:var(--paper);
+  padding:4px 11px 3px; border-radius:3px;
+  min-width:68px; text-align:center;
+  box-shadow:2px 2px 0 var(--ink-soft);
+  position:relative;
+}
+.shelf-label::before {
+  content:'';
+  position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  width:24px; height:7px;
+  background:rgba(203,185,150,.45); border-radius:1px;
+}
+.shelf-row.found-row .shelf-label {
+  background:var(--green); box-shadow:2px 2px 0 #2d3828;
+  animation:stampIn .3s ease-out;
+}
+@keyframes stampIn {
+  0%  { transform:rotate(-6deg) scale(.65); opacity:.3; }
+  100%{ transform:rotate(0) scale(1); opacity:1; }
+}
+
+.shelf-count {
+  flex-shrink:0;
+  font-family:'Courier New','Lucida Console',monospace;
+  text-align:right;
+}
+.sc-num { font-size:1.2rem; font-weight:700; line-height:1; }
+.sc-lbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); }
+
+.shelf-chevron {
+  flex-shrink:0; font-size:1.1rem; color:var(--line);
+  transition:transform .22s, color .2s;
+  margin-left:auto;
+}
+.shelf-row:hover .shelf-chevron { color:var(--ink); transform:translateX(4px); }
+.shelf-row.found-row .shelf-chevron { color:var(--green); }
+
+/* ══ FLOOR ══ */
+.floor-txt {
+  font-family:'Courier New','Lucida Console',monospace; font-size:.68rem;
+  text-transform:uppercase; letter-spacing:.2em;
+  color:var(--line); text-align:center;
+  margin-top:1.6rem; padding-top:1.2rem;
+  border-top:1px dashed var(--line);
+}
+
+/* ══ DRAWER ══ */
+.overlay {
+  position:fixed; inset:0; z-index:400;
+  background:rgba(34,30,24,.72);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.overlay.open { display:flex; animation:fadeO .2s ease; }
+@keyframes fadeO { from{opacity:0}to{opacity:1} }
+
+.drawer {
+  width:100%; max-width:640px;
+  background:var(--paper);
+  border-top:3px solid var(--ink);
+  border-left:2px solid var(--ink);
+  border-right:2px solid var(--ink);
+  border-radius:10px 10px 0 0;
+  max-height:88dvh;
+  display:flex; flex-direction:column;
+  animation:drawerUp .3s cubic-bezier(.22,.85,.36,1);
+  box-shadow:0 -6px 32px rgba(34,30,24,.2);
+}
+@keyframes drawerUp { from{transform:translateY(100%)}to{transform:translateY(0)} }
+
+@media(min-width:660px){
+  .overlay { align-items:center; }
+  .drawer {
+    border:2px solid var(--ink); border-radius:8px;
+    margin:20px; max-height:82dvh;
+    box-shadow:6px 6px 0 var(--ink);
+  }
+}
+
+.drawer-handle {
+  width:36px; height:4px; background:var(--line);
+  border-radius:2px; margin:11px auto 0; flex-shrink:0;
+}
+.drawer-head {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 18px;
+  border-bottom:2px solid var(--ink); flex-shrink:0;
+}
+.drawer-tag {
+  font-family:'Impact','Arial Black','Anton',sans-serif; font-size:1.5rem; letter-spacing:.04em;
+  background:var(--ink); color:var(--paper);
+  padding:5px 15px 4px; border-radius:4px;
+  box-shadow:3px 3px 0 var(--ink-soft); white-space:nowrap;
+}
+.drawer-meta { flex:1; }
+.drawer-title { font-weight:700; font-size:.95rem; }
+.drawer-sub {
+  font-family:'Courier New','Lucida Console',monospace; font-size:.7rem;
+  color:var(--ink-soft); margin-top:1px;
+  text-transform:uppercase; letter-spacing:.08em;
+}
+.drawer-close {
+  width:36px; height:36px; border-radius:3px; flex-shrink:0;
+  border:2px solid var(--ink); background:transparent; color:var(--ink);
+  font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-weight:700; transition:background .15s, color .15s;
+}
+.drawer-close:hover { background:var(--red); color:var(--paper); border-color:var(--red); }
+
+/* search inside drawer */
+.drawer-search-wrap {
+  padding:12px 18px 0; flex-shrink:0;
+  position:relative;
+}
+.drawer-search-ico {
+  position:absolute; left:30px; top:50%; transform:translateY(-25%);
+  font-size:13px; color:var(--ink-soft); pointer-events:none;
+}
+.drawer-search-inp {
+  width:100%;
+  background:var(--paper-deep);
+  border:1.5px solid var(--line); border-radius:3px;
+  padding:8px 12px 8px 34px;
+  color:var(--ink);
+  font-family:'Courier New','Lucida Console',monospace; font-size:12px;
+  outline:none; -webkit-appearance:none;
+  transition:border-color .2s;
+}
+.drawer-search-inp:focus { border-color:var(--ink); }
+.drawer-search-inp::placeholder { color:var(--line); }
+
+.drawer-body { flex:1; overflow-y:auto; padding:12px 18px 24px; }
+
+/* ref chips grid */
+.chips {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px,1fr));
+  gap:7px;
+}
+.chip {
+  font-family:'Courier New','Lucida Console',monospace; font-size:12px;
+  border:1.5px solid var(--line); border-radius:3px;
+  padding:7px 10px; text-align:center;
+  background:var(--paper-deep);
+  transition:border-color .15s, background .15s;
+  animation:chipIn .18s ease;
+}
+@keyframes chipIn { from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)} }
+.chip.hit {
+  border-color:var(--green); background:rgba(70,86,63,.12);
+  color:var(--green); font-weight:700;
+}
+.chip.dim { opacity:.35; }
+
+.empty-msg {
+  text-align:center; padding:24px;
+  color:var(--ink-soft); font-family:'Courier New','Lucida Console',monospace; font-size:.8rem;
+  border:1px dashed var(--line); border-radius:3px;
+  text-transform:uppercase; letter-spacing:.1em;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--line); border-radius:99px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      MAGAZYN
+    </div>
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input class="search-inp" id="searchInp" type="text"
+        placeholder="Szukaj referencji…"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <button class="search-clr" id="searchClr" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="topbar-count" id="topbarCount">
+      <div class="tc-num" id="tcNum">0</div>
+      <div class="tc-lbl">wyników</div>
+    </div>
+  </div>
+</header>
+
+<!-- RESULT BANNER -->
+<div class="result-banner" id="resultBanner">
+  <div class="rb-inner" id="rbInner"></div>
+</div>
+
+<!-- CONTENT -->
+<main class="content">
+  <div class="shelves" id="shelves"></div>
+  <div class="floor-txt">— Koniec ewidencji — kliknij półkę, aby zobaczyć zawartość —</div>
+</main>
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <div class="drawer-tag" id="dTag"></div>
+      <div class="drawer-meta">
+        <div class="drawer-title" id="dTitle"></div>
+        <div class="drawer-sub"  id="dSub"></div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-search-wrap">
+      <span class="drawer-search-ico">🔍</span>
+      <input class="drawer-search-inp" id="drawerSearch" type="text"
+        placeholder="Filtruj w tej półce…"
+        autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="drawer-body">
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ DANE ══════════════════════════════════════════════════════════════════ */
+const DB = {
+  'B13-2': [
+    '100231','100232','100241','100242','100251','100457','100252','100352',
+    '107495','012031','012032','012033','012034','012041','012042','012043',
+    '012044','012045','012804','012052','012220','012221','012222','012290',
+    '024221','024222','024223','024224','024225','024231','024232','024233',
+    '024234','024235','024241','024243','024245','024251','024253','024826',
+    '024254','024255','024256','024827','024828','218779','218781','218799',
+    '218792','218791','218778','218775','218774','218773','218772','228769',
+    '217729','218977','218800','213938','943320','943321','943322'
+  ],
+  'B14-3': [
+    '014760','014771','290638','290639','226602','078948'
+  ],
+  'B14-2': [
+    '008350','008351','008360','008361','008362','008363','008370','008371',
+    '008853','008854','008922','008923','008924','008925','000053','000917',
+    '000910','000050','080650','000991','000992','000996','000054','000051',
+    '028412','028312','028299','028302','906500','906501','906502','906503',
+    '906504','900946','909414','906506','906507','906508','967157','967155',
+    '967594','909039','990800','900871','999954','901955','993315','990660',
+    '906110','922330','922329','992728','919739','917924','909037','967550',
+    '967551','967552','967553','967554','967555','967556','967557','967558',
+    '967559','916264'
+  ],
+  'A2-3': [
+    '913224','393638','591156','580211','071019','099740','099741'
+  ],
+  'A2-1': [
+    '068651','068801','772692','772693','011131','012204','012205','000982',
+    '000983','000984','000987','000988','000989','001982','001984','001988',
+    '909038','031001','013910','013911','013912'
+  ],
+  'A7-2': [
+    '098309','094726','094727','094728','094417','094317','094517','094357',
+    '094457','094725','090806','090404','090406','088967','080630','080047',
+    '080070','088966','084718','508560','580212','071032','078962','078960',
+    '078964','071005','071006','061015','071035','071400','070340','068651',
+    '068801','068351','060335','063453','063352','063551','063251','063351',
+    '063202','063451','063355','063201','063252','061350','063455','050330',
+    '051300','041250','040325','030319','011290','011291','011390','011394',
+    '011395','011396'
+  ],
+  'A07-2': [
+    '998331','998332','998333','998334','998335','998336','998337','998338',
+    '998339','998340','998321','998324','998325','193524','293019','293020',
+    '293227','293525','201402','201401','200401','209402','209403','103048',
+    '117904','117905','213939','216359','137902','137903','122045','122025',
+    '002000','101180','101182','180034','198320','198326','293990','291154',
+    '291153','193396','193397'
+  ],
+  'A07-1': [
+    '293227','193226'
+  ],
+  'C5-2': [
+    '013929','193610','917932','000039','917934','917931'
+  ],
+  'A10-1': [
+    '992326','913823','012232'
+  ]
+};
+
+/* ══ STATE ══════════════════════════════════════════════════════════════════ */
+let query = '';
+let openId = null;
+let foundIds = []; // all shelves containing the search hit
+
+/* ══ RENDER SHELVES ════════════════════════════════════════════════════════ */
+function renderShelves() {
+  const wrap = document.getElementById('shelves');
+  wrap.innerHTML = '';
+
+  Object.entries(DB).forEach(([id, refs]) => {
+    const isFound = foundIds.includes(id);
+
+    const row = document.createElement('div');
+    row.className = 'shelf-row' + (isFound ? ' found-row' : '');
+    row.id = 'row_' + id.replace(/[^a-z0-9]/gi, '_');
+    row.innerHTML = `
+      <div class="shelf-inner">
+        <div class="shelf-label">${id}</div>
+        <div class="shelf-count">
+          <div class="sc-num">${refs.length}</div>
+          <div class="sc-lbl">ref.</div>
+        </div>
+        <span class="shelf-chevron">›</span>
+      </div>
+    `;
+    row.addEventListener('click', () => openDrawer(id, row));
+    wrap.appendChild(row);
+  });
+}
+
+/* ══ DRAWER ════════════════════════════════════════════════════════════════ */
+function openDrawer(id, rowEl) {
+  if (rowEl) {
+    rowEl.classList.add('pulling');
+    setTimeout(() => rowEl.classList.remove('pulling'), 380);
+  }
+  openId = id;
+  document.getElementById('dTag').textContent = id;
+  document.getElementById('dTitle').textContent = 'Półka ' + id;
+  document.getElementById('drawerSearch').value = '';
+  renderDrawerChips('');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderDrawerChips(filter) {
+  const refs = DB[openId] || [];
+  const f = filter.toUpperCase();
+  const q = query.toUpperCase();
+  const chips = document.getElementById('chips');
+
+  const n = refs.length;
+  const words = n === 1 ? 'referencja' : n < 5 ? 'referencje' : 'referencji';
+  document.getElementById('dSub').textContent = n + ' ' + words;
+
+  if (refs.length === 0) {
+    chips.innerHTML = '<div class="empty-msg">Półka pusta</div>';
+    return;
+  }
+
+  chips.innerHTML = refs.map(r => {
+    const isHit = q && r.toUpperCase() === q;
+    const isDim = f && !r.toUpperCase().includes(f);
+    return `<div class="chip${isHit ? ' hit' : ''}${isDim ? ' dim' : ''}">${r}</div>`;
+  }).join('');
+}
+
+function closeDrawer() {
+  openId = null;
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('drawerSearch').value = '';
+}
+function overlayClick(e) { if (e.target === document.getElementById('overlay')) closeDrawer(); }
+
+document.getElementById('drawerSearch').addEventListener('input', e => {
+  renderDrawerChips(e.target.value.trim());
+});
+
+/* ══ GLOBAL SEARCH ═════════════════════════════════════════════════════════ */
+document.getElementById('searchInp').addEventListener('input', e => {
+  query = e.target.value.trim();
+  document.getElementById('searchClr').classList.toggle('on', query.length > 0);
+  doSearch();
+});
+
+function clearSearch() {
+  document.getElementById('searchInp').value = '';
+  query = '';
+  document.getElementById('searchClr').classList.remove('on');
+  doSearch();
+}
+
+function doSearch() {
+  const banner = document.getElementById('resultBanner');
+  const rbInner = document.getElementById('rbInner');
+  const topCount = document.getElementById('topbarCount');
+  foundIds = [];
+
+  if (!query) {
+    banner.classList.remove('show');
+    topCount.classList.remove('show');
+    renderShelves();
+    return;
+  }
+
+  const q = query.toUpperCase();
+  for (const [id, refs] of Object.entries(DB)) {
+    if (refs.some(r => r.toUpperCase() === q)) foundIds.push(id);
+  }
+
+  renderShelves();
+
+  if (foundIds.length > 0) {
+    const shelfLabels = foundIds.map(id =>
+      `<span class="rb-badge found">${id}</span>`
+    ).join(' ');
+    rbInner.innerHTML = `
+      <span class="rb-text">✔ Referencja</span>
+      <span class="rb-badge">${query}</span>
+      <span class="rb-arrow">→</span>
+      <span class="rb-text">półka:</span>
+      ${shelfLabels}
+    `;
+    banner.classList.add('show');
+
+    // scroll to first found shelf
+    setTimeout(() => {
+      const el = document.getElementById('row_' + foundIds[0].replace(/[^a-z0-9]/gi, '_'));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+  } else {
+    rbInner.innerHTML = `
+      <span class="rb-badge notfound">✘</span>
+      <span class="rb-text">Referencja <strong>${query}</strong> nie znaleziona w żadnej półce</span>
+    `;
+    banner.classList.add('show');
+  }
+}
+
+/* ══ KEYBOARD ══════════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ══ INIT ══════════════════════════════════════════════════════════════════ */
+renderShelves();
+</script>
+</body>
+</html>
