@@ -7,6 +7,7 @@ Część referencji, w firmie ktorej pracowalem, nie miala przypisanych lokaliza
 - **Interaktywny interfejs**
 - **filtrowanie lokalne**
 - **responsywność**
+  
 ## Technologie:
 - **HTML5**
 - **CSS3**
